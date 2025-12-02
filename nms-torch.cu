@@ -9,7 +9,7 @@
 #include <algorithm>
 
 
-const std::string BENCHMARK_DIR = "nms/benchmark/";
+const std::string BENCHMARK_DIR = "benchmark/";
 
 struct Box { float x1, y1, x2, y2; };
 
