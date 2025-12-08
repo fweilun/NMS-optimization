@@ -9,7 +9,7 @@
 #include <algorithm>
 
 
-const std::string BENCHMARK_DIR = "benchmark/";
+const std::string BENCHMARK_DIR = "./benchmark/";
 
 struct Box { float x1, y1, x2, y2; };
 
@@ -65,7 +65,7 @@ std::vector<int> read_answer_csv(const std::string& path) {
     return out;
 }
 
-int const threadsPerBlock = sizeof(unsigned long long) * 8;
+int const threadsPerBlock = sizeof(unsigned long long) * 8; // 64 bits
 __host__ __device__ inline int ceil_div(int a, int b) { return (a + b - 1) / b; }
 
 template <typename T>
@@ -88,18 +88,22 @@ __global__ void nms_kernel_impl(
     double iou_threshold,
     const T* dev_boxes,
     unsigned long long* dev_mask) {
+  
+  // This block compares a row tile (y) and a col tile (x)
   const auto row_start = blockIdx.y;
   const auto col_start = blockIdx.x;
 
   if (row_start > col_start)
     return;
 
+  // The last partition may be smaller than threadsPerBlock
   const int row_size =
       min(n_boxes - row_start * threadsPerBlock, threadsPerBlock);
   const int col_size =
       min(n_boxes - col_start * threadsPerBlock, threadsPerBlock);
 
-  __shared__ T block_boxes[threadsPerBlock * 4];
+  __shared__ T block_boxes[threadsPerBlock * 4]; // the '4' here represents (x1, y1, x2, y2)
+  // Store col tiles in shared memory
   if (threadIdx.x < col_size) {
     block_boxes[threadIdx.x * 4 + 0] =
         dev_boxes[(threadsPerBlock * col_start + threadIdx.x) * 4 + 0];
@@ -110,9 +114,12 @@ __global__ void nms_kernel_impl(
     block_boxes[threadIdx.x * 4 + 3] =
         dev_boxes[(threadsPerBlock * col_start + threadIdx.x) * 4 + 3];
   }
-  __syncwarp();
+  __syncthreads();
+  // __syncwarp();
 
   if (threadIdx.x < row_size) {
+    // Each thread holds a row tile, and compare it with all col tiles
+    // 'cur_box_idx' is the global index of the current box
     const auto cur_box_idx = threadsPerBlock * row_start + threadIdx.x;
     const T* cur_box = dev_boxes + cur_box_idx * 4;
     int i = 0;
@@ -121,13 +128,19 @@ __global__ void nms_kernel_impl(
     if (row_start == col_start) {
       start = threadIdx.x + 1;
     }
+    // If the IoU is larger than the threshold, then set the bit to 1
+    // 't' is a bit mask representing the ious between one box and
+    // other boxes in the block
     for (i = start; i < col_size; i++) {
       if (devIoU<T>(cur_box, block_boxes + i * 4, iou_threshold)) {
         t |= 1ULL << i;
       }
     }
     const int col_blocks = ceil_div(n_boxes, threadsPerBlock);
-    dev_mask[cur_box_idx * col_blocks + col_start] = t;
+    // Collect all the bit masks to the global memory
+    // Each entry in 'dev_mask' stores the comparison results between one box and boxes in one col tile
+    // 'dev_mask' is flattened from the 2D array with shape (n_boxes, col_blocks)
+    dev_mask[cur_box_idx * col_blocks + col_start] = t; // 't' has shape of (threadsPerBlock, )
   }
 }
 
@@ -148,10 +161,14 @@ __global__ static void gather_keep_from_mask(
     removed[i] = 0;
   }
   __syncthreads();
+  // __syncwarp();
 
+  // removed[j] is a 64-bit bitset for column block j.
+  // removed[j]’s bits indicate which boxes in block j are already suppressed.
   for (int nblock = 0; nblock < col_blocks; nblock++) {
     auto removed_val = removed[nblock];
     __syncthreads();
+    // __syncwarp();
     const int i_offset = nblock * threadsPerBlock;
     #pragma unroll
     for (int inblock = 0; inblock < threadsPerBlock; inblock++) {
@@ -159,7 +176,7 @@ __global__ static void gather_keep_from_mask(
       if (i >= n_boxes)
         break;
       // Select a candidate, check if it should kept.
-      if (!(removed_val & (1ULL << inblock))) {
+      if (!(removed_val & (1ULL << inblock))) {   // if not removed
         if (thread_id == 0) {
           keep[i] = true;
         }
@@ -169,6 +186,7 @@ __global__ static void gather_keep_from_mask(
           removed[j] |= p[j];
         }
         __syncthreads();
+        //__syncwarp();
         removed_val = removed[nblock];
       }
     }
@@ -202,7 +220,7 @@ std::vector<int> nms_kernel(const std::vector<Box>& boxes, const std::vector<flo
 
     // 1) 按照 scores 排序（降序），就像 nms_kernel.cu 一样
     std::vector<int> order(n);
-    std::iota(order.begin(), order.end(), 0);
+    std::iota(order.begin(), order.end(), 0); // initialize with 0, 1, ..., n-1
     std::sort(order.begin(), order.end(), [&scores](int a, int b) {
         return scores[a] > scores[b];  // 降序排序
     });
@@ -219,7 +237,7 @@ std::vector<int> nms_kernel(const std::vector<Box>& boxes, const std::vector<flo
 
     // 3) 配置 device buffer
     float* d_boxes = nullptr;
-    const int col_blocks = ceil_div(n, threadsPerBlock);
+    const int col_blocks = ceil_div(n, threadsPerBlock); // threadsPerBlock = 64
     unsigned long long* d_mask = nullptr;
     bool* d_keep = nullptr;
 
@@ -259,9 +277,9 @@ std::vector<int> nms_kernel(const std::vector<Box>& boxes, const std::vector<flo
     // std::cout << "--- gather_keep_from_mask timing started ---" << std::endl;
 
     gather_keep_from_mask<<<
-        1,
-        std::min(col_blocks, threadsPerBlock),
-        col_blocks * sizeof(unsigned long long)>>>(
+        1,                                            // 1 block
+        std::min(col_blocks, threadsPerBlock),        // up to 'threadsPerBlock' = 64 threads
+        col_blocks * sizeof(unsigned long long)>>>(   // shared memory size
         d_keep, d_mask, n);
 
     err = cudaDeviceSynchronize();
@@ -305,6 +323,10 @@ bool nms_test(int data_num, int id) {
 
     auto boxes_h = read_boxes_csv(data_path);
     auto scores_h = read_scores_csv(score_path);
+
+    std::cout << "boxes_h.size() = " << boxes_h.size()
+          << ", scores_h.size() = " << scores_h.size() << "\n";
+
     double iou_thr = 0.45;
     std::vector<int> result = nms_kernel(boxes_h, scores_h, iou_thr);
     std::vector<int> ans = read_answer_csv(answer_path);
@@ -328,6 +350,9 @@ int main(int argc, char* argv[]) {
     int n = stoi(n_str);
     if (nms_test(n, 0)) {
         printf("CORRECT!!\n");
+    }
+    else {
+        printf("WRONG!!\n");
     }
     return 0;
 }
