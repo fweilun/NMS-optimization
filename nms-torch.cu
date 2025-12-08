@@ -147,19 +147,17 @@ __global__ static void gather_keep_from_mask(
   for (int i = thread_id; i < col_blocks; i += blockDim.x) {
     removed[i] = 0;
   }
-  // __syncthreads();
-  __syncwarp();
+  __syncthreads();
 
   for (int nblock = 0; nblock < col_blocks; nblock++) {
     auto removed_val = removed[nblock];
-    // __syncthreads();
-    __syncwarp();
+    __syncthreads();
     const int i_offset = nblock * threadsPerBlock;
     #pragma unroll
     for (int inblock = 0; inblock < threadsPerBlock; inblock++) {
       const int i = i_offset + inblock;
-      // if (i >= n_boxes)
-      //   break;
+      if (i >= n_boxes)
+        break;
       // Select a candidate, check if it should kept.
       if (!(removed_val & (1ULL << inblock))) {
         if (thread_id == 0) {
@@ -170,8 +168,7 @@ __global__ static void gather_keep_from_mask(
         for (int j = thread_id; j < col_blocks; j += blockDim.x) {
           removed[j] |= p[j];
         }
-        // __syncthreads();
-        __syncwarp();
+        __syncthreads();
         removed_val = removed[nblock];
       }
     }
