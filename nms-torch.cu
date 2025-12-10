@@ -154,6 +154,8 @@ __global__ static void gather_keep_from_mask(
   const auto thread_id = threadIdx.x;
 
   // Mark the bboxes which have been removed.
+  // Each entry in removed[] is a 64-bit bitset for a col block, hence,
+  // removed[] stores the removal status for ALL boxes.
   extern __shared__ unsigned long long removed[];
 
   // Initialize removed.
@@ -172,7 +174,7 @@ __global__ static void gather_keep_from_mask(
     const int i_offset = nblock * threadsPerBlock;
     #pragma unroll
     for (int inblock = 0; inblock < threadsPerBlock; inblock++) {
-      const int i = i_offset + inblock;
+      const int i = i_offset + inblock; // 'i' points to a candidate box
       if (i >= n_boxes)
         break;
       // Select a candidate, check if it should kept.
@@ -181,9 +183,10 @@ __global__ static void gather_keep_from_mask(
           keep[i] = true;
         }
         auto p = dev_mask + i * col_blocks;
-        // Remove all bboxes which overlap the candidate.
+        // Remove all bboxes which overlap the candidate 'i'.
         for (int j = thread_id; j < col_blocks; j += blockDim.x) {
           removed[j] |= p[j];
+          // p[j] = dev_mask[i * col_blocks + j], and points to a 64-bit bitset
         }
         __syncthreads();
         //__syncwarp();
@@ -348,11 +351,13 @@ bool nms_test(int data_num, int id) {
 int main(int argc, char* argv[]) {
     std::string n_str = argv[1];
     int n = stoi(n_str);
-    if (nms_test(n, 0)) {
-        printf("CORRECT!!\n");
-    }
-    else {
-        printf("WRONG!!\n");
+    for (int id = 0; id < 10; id++) {
+      if (nms_test(n, 0)) {
+          printf("CORRECT!!\n");
+      }
+      else {
+          printf("WRONG!!\n");
+    }   
     }
     return 0;
 }

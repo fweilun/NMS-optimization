@@ -147,7 +147,7 @@ __global__ void compute_overlap_matrix(
 }
 
 // Kernel 2: greedy NMS on GPU using the overlap matrix
-// Runs on a single thread for simplicity.
+// Runs on a single thread for simplicity (similar to CPU version)
 __global__ void greedy_nms_from_overlap(
     int n,
     const bool* overlap,  // [n * n], only i<j used
@@ -310,11 +310,13 @@ bool nms_test(int data_num, int id) {
 int main(int argc, char* argv[]) {
     std::string n_str = argv[1];
     int n = stoi(n_str);
-    if (nms_test(n, 0)) {
-        printf("CORRECT!!\n");
-    }
-    else {
-        printf("WRONG!!\n");
+    for (int id = 0; id < 10; id++) {
+      if (nms_test(n, 0)) {
+          printf("CORRECT!!\n");
+      }
+      else {
+          printf("WRONG!!\n");
+    }   
     }
     return 0;
 }
