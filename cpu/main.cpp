@@ -6,9 +6,10 @@
 #include <chrono>
 #include <numeric>
 #include <algorithm>
+#include <time.h>
 #include "nms.hpp"
 
-const std::string BENCHMARK_DIR = "benchmark/";
+const std::string BENCHMARK_DIR = "../benchmark/";
 
 std::vector<Box> read_boxes_csv(const std::string& path) {
     std::ifstream file(path);
@@ -70,7 +71,12 @@ bool nms_test(int data_num, int id) {
     auto boxes_h = read_boxes_csv(data_path);
     auto scores_h = read_scores_csv(score_path);
     double iou_thr = 0.45;
-    std::vector<int> result = nms(boxes_h, scores_h, iou_thr);
+
+    // std::vector<int> result = nms_baseline(boxes_h, scores_h, iou_thr);
+    // std::vector<int> result = nms_omp(boxes_h, scores_h, iou_thr);
+    // std::vector<int> result = nms_SIMD(boxes_h, scores_h, iou_thr);
+    std::vector<int> result = nms_SoA(boxes_h, scores_h, iou_thr);
+
     std::vector<int> ans = read_answer_csv(answer_path);
     
     if (result.size() != ans.size()){
