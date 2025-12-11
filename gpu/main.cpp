@@ -93,7 +93,7 @@ bool nms_test(int data_num, int id) {
 int main(int argc, char* argv[]) {
     std::string n_str = argv[1];
     int n = stoi(n_str);
-    for (int id = 0; id < 10; id++) {
+    for (int id = 0; id < 100; id++) {
       if (nms_test(n, 0)) {
           printf("CORRECT!!\n");
       }
@@ -103,3 +103,5 @@ int main(int argc, char* argv[]) {
     }
     return 0;
 }
+
+// 2.2594ms

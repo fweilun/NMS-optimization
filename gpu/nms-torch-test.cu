@@ -108,7 +108,6 @@ __global__ void nms_kernel_impl(
       if (devIoU<T>(cur_box, block_boxes + i * 4, iou_threshold)) {
         t |= BITMASK_TABLE[i];
       }
-      t |= BITMASK_TABLE[i];
     }
     const int col_blocks = ceil_div(n_boxes, threadsPerBlock);
     // Collect all the bit masks to the global memory
@@ -136,10 +135,10 @@ __global__ static void gather_keep_from_mask(
   for (int i = thread_id; i < col_blocks; i += blockDim.x) {
     removed[i] = 0;
   }
-  __syncwarp();
+  __syncthreads();
   for (int nblock = 0; nblock < col_blocks; nblock++) {
     auto removed_val = removed[nblock];
-    __syncwarp();
+    __syncthreads();
     const int i_offset = nblock * threadsPerBlock;
     if (i_offset >= n_boxes)
         break;
@@ -155,7 +154,7 @@ __global__ static void gather_keep_from_mask(
         for (int j = thread_id; j < col_blocks; j += blockDim.x) {
           removed[j] |= p[j];
         }
-        __syncwarp();
+        __syncthreads();
         removed_val = removed[nblock];
       }
     }
