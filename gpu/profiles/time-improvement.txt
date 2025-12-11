@@ -1,0 +1,28 @@
+
+
+IN 2000:
+
+## native
+            Type  Time(%)      Time     Calls       Avg       Min       Max  Name
+ GPU activities:   82.57%  28.518ms       100  285.18us  284.26us  286.24us  gather_keep_from_mask(bool*, __int64 const *, int)
+                   15.26%  5.2716ms       100  52.715us  49.697us  55.041us  void nms_kernel_impl<float>(int, double, float const *, __int64*)
+                    1.03%  355.97us       100  3.5590us  3.5200us  3.8720us  [CUDA memcpy HtoD]
+                    0.82%  282.02us       200  1.4100us     928ns  2.4640us  [CUDA memset]
+                    0.31%  108.77us       100  1.0870us  1.0560us  1.4720us  [CUDA memcpy DtoH]
+
+## syncwarps + remove if
+
+            Type  Time(%)      Time     Calls       Avg       Min       Max  Name
+ GPU activities:   80.38%  24.285ms       100  242.85us  241.70us  249.51us  gather_keep_from_mask(bool*, __int64 const *, int)
+                   17.40%  5.2574ms       100  52.574us  48.673us  55.233us  void nms_kernel_impl<float>(int, double, float const *, __int64*)
+                    1.18%  356.87us       100  3.5680us  3.5200us  4.7360us  [CUDA memcpy HtoD]
+                    0.68%  206.69us       100  2.0660us  2.0160us  2.4640us  [CUDA memset]
+                    0.36%  108.29us       100  1.0820us  1.0560us  1.4720us  [CUDA memcpy DtoH]
+
+## syncwarps + remove if + operations optimize
+            Type  Time(%)      Time     Calls       Avg       Min       Max  Name
+ GPU activities:   89.55%  21.289ms       100  212.89us  211.49us  218.37us  gather_keep_from_mask(bool*, __int64 const *, int)
+                    7.89%  1.8766ms       100  18.766us  17.376us  19.777us  void nms_kernel_impl<float>(int, double, float const *, __int64*)
+                    1.36%  322.60us       100  3.2250us  3.1680us  4.2240us  [CUDA memcpy HtoD]
+                    0.77%  181.92us       100  1.8190us  1.7600us  2.1760us  [CUDA memset]
+                    0.44%  103.84us       100  1.0380us     992ns  1.3120us  [CUDA memcpy DtoH]

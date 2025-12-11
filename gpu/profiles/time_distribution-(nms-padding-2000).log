@@ -1,0 +1,9 @@
+==2979308== NVPROF is profiling process 2979308, command: ./nms-padding 2000
+==2979308== Profiling application: ./nms-padding 2000
+==2979308== Profiling result:
+            Type  Time(%)      Time     Calls       Avg       Min       Max  Name
+ GPU activities:   68.42%  2.8466ms        10  284.66us  284.13us  285.38us  gather_keep_from_mask(bool*, __int64 const *, int)
+                   29.76%  1.2383ms        10  123.83us  117.57us  127.23us  nms_kernel_impl(int, double, float const *, __int64*)
+                    1.05%  43.841us        10  4.3840us  3.5840us  11.329us  [CUDA memcpy HtoD]
+                    0.48%  19.937us        10  1.9930us  1.8560us  2.4320us  [CUDA memset]
+                    0.28%  11.617us        10  1.1610us  1.0560us  1.4400us  [CUDA memcpy DtoH]

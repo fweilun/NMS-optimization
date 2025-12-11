@@ -1,0 +1,21 @@
+==2120518== NVPROF is profiling process 2120518, command: ./nms-padding 2000
+==2120518== Some kernel(s) will be replayed on device 0 in order to collect all events/metrics.
+==2120518== Profiling application: ./nms-padding 2000
+==2120518== Profiling result:
+==2120518== Metric result:
+Invocations                               Metric Name                        Metric Description         Min         Max         Avg
+Device "NVIDIA GeForce GTX 1080 (0)"
+    Kernel: nms_kernel_impl(int, double, float const *, __int64*)
+         10                        achieved_occupancy                        Achieved Occupancy    0.701142    0.715914    0.710470
+         10                             sm_efficiency                   Multiprocessor Activity      82.69%      89.40%      86.69%
+         10                    shared_load_throughput             Shared Memory Load Throughput  123.25GB/s  129.92GB/s  127.33GB/s
+         10                   shared_store_throughput            Shared Memory Store Throughput  3.7522GB/s  3.9550GB/s  3.8761GB/s
+         10                            gld_throughput                    Global Load Throughput  30.018GB/s  31.640GB/s  31.009GB/s
+         10                            gst_throughput                   Global Store Throughput  7.5044GB/s  7.9100GB/s  7.7523GB/s
+    Kernel: gather_keep_from_mask(bool*, __int64 const *, int)
+         10                        achieved_occupancy                        Achieved Occupancy    0.015625    0.015625    0.015625
+         10                             sm_efficiency                   Multiprocessor Activity       4.93%       4.95%       4.93%
+         10                    shared_load_throughput             Shared Memory Load Throughput  975.48MB/s  986.24MB/s  978.95MB/s
+         10                   shared_store_throughput            Shared Memory Store Throughput  645.50MB/s  652.62MB/s  647.80MB/s
+         10                            gld_throughput                    Global Load Throughput  644.70MB/s  651.81MB/s  647.00MB/s
+         10                            gst_throughput                   Global Store Throughput  80.588MB/s  81.477MB/s  80.874MB/s

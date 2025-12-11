@@ -1,21 +1,21 @@
-==2119219== NVPROF is profiling process 2119219, command: ./nms-torch 2000
-==2119219== Some kernel(s) will be replayed on device 0 in order to collect all events/metrics.
-==2119219== Profiling application: ./nms-torch 2000
-==2119219== Profiling result:
-==2119219== Metric result:
+==2125177== NVPROF is profiling process 2125177, command: ./nms-torch 2000
+==2125177== Some kernel(s) will be replayed on device 0 in order to collect all events/metrics.
+==2125177== Profiling application: ./nms-torch 2000
+==2125177== Profiling result:
+==2125177== Metric result:
 Invocations                               Metric Name                        Metric Description         Min         Max         Avg
 Device "NVIDIA GeForce GTX 1080 (0)"
     Kernel: gather_keep_from_mask(bool*, __int64 const *, int)
-         10                        achieved_occupancy                        Achieved Occupancy    0.015625    0.015625    0.015625
-         10                             sm_efficiency                   Multiprocessor Activity       4.93%       4.95%       4.93%
-         10                    shared_load_throughput             Shared Memory Load Throughput  922.54MB/s  933.43MB/s  928.08MB/s
-         10                   shared_store_throughput            Shared Memory Store Throughput  609.92MB/s  617.12MB/s  613.58MB/s
-         10                            gld_throughput                    Global Load Throughput  609.11MB/s  616.30MB/s  612.77MB/s
-         10                            gst_throughput                   Global Store Throughput  76.139MB/s  77.038MB/s  76.596MB/s
+        100                        achieved_occupancy                        Achieved Occupancy    0.015625    0.015625    0.015625
+        100                             sm_efficiency                   Multiprocessor Activity       4.92%       4.95%       4.93%
+        100                    shared_load_throughput             Shared Memory Load Throughput  917.82MB/s  933.70MB/s  926.99MB/s
+        100                   shared_store_throughput            Shared Memory Store Throughput  606.80MB/s  617.30MB/s  612.86MB/s
+        100                            gld_throughput                    Global Load Throughput  605.99MB/s  616.48MB/s  612.05MB/s
+        100                            gst_throughput                   Global Store Throughput  75.749MB/s  77.060MB/s  76.506MB/s
     Kernel: void nms_kernel_impl<float>(int, double, float const *, __int64*)
-         10                        achieved_occupancy                        Achieved Occupancy    0.566074    0.618666    0.583450
-         10                             sm_efficiency                   Multiprocessor Activity      83.52%      88.25%      86.37%
-         10                    shared_load_throughput             Shared Memory Load Throughput  276.76GB/s  288.46GB/s  282.16GB/s
-         10                   shared_store_throughput            Shared Memory Store Throughput  8.5563GB/s  8.9181GB/s  8.7231GB/s
-         10                            gld_throughput                    Global Load Throughput  68.935GB/s  71.850GB/s  70.279GB/s
-         10                            gst_throughput                   Global Store Throughput  17.622GB/s  18.367GB/s  17.966GB/s
+        100                        achieved_occupancy                        Achieved Occupancy    0.560637    0.616218    0.586724
+        100                             sm_efficiency                   Multiprocessor Activity      66.78%      90.79%      85.66%
+        100                    shared_load_throughput             Shared Memory Load Throughput  273.99GB/s  291.70GB/s  282.97GB/s
+        100                   shared_store_throughput            Shared Memory Store Throughput  8.4708GB/s  9.0182GB/s  8.7482GB/s
+        100                            gld_throughput                    Global Load Throughput  68.246GB/s  72.656GB/s  70.481GB/s
+        100                            gst_throughput                   Global Store Throughput  17.446GB/s  18.574GB/s  18.017GB/s

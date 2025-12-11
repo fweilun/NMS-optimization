@@ -1,0 +1,9 @@
+==2994141== NVPROF is profiling process 2994141, command: ./nms-torch 5000
+==2994141== Profiling application: ./nms-torch 5000
+==2994141== Profiling result:
+            Type  Time(%)      Time     Calls       Avg       Min       Max  Name
+ GPU activities:   79.72%  108.29ms       100  1.0829ms  1.0761ms  1.0904ms  gather_keep_from_mask(bool*, __int64 const *, int)
+                   18.63%  25.302ms       100  253.02us  246.47us  264.90us  void nms_kernel_impl<float>(int, double, float const *, __int64*)
+                    0.86%  1.1747ms       200  5.8730us     992ns  11.072us  [CUDA memset]
+                    0.68%  929.26us       100  9.2920us  8.7680us  10.976us  [CUDA memcpy HtoD]
+                    0.10%  138.66us       100  1.3860us  1.3440us  1.6640us  [CUDA memcpy DtoH]

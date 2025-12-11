@@ -1,0 +1,21 @@
+==1280394== NVPROF is profiling process 1280394, command: ./nms-torch-test-2000 2000
+==1280394== Some kernel(s) will be replayed on device 0 in order to collect all events/metrics.
+==1280394== Profiling application: ./nms-torch-test-2000 2000
+==1280394== Profiling result:
+==1280394== Metric result:
+Invocations                               Metric Name                        Metric Description         Min         Max         Avg
+Device "NVIDIA GeForce GTX 1080 (0)"
+    Kernel: gather_keep_from_mask(bool*, __int64 const *, int)
+        100                        achieved_occupancy                        Achieved Occupancy    0.015625    0.015625    0.015625
+        100                             sm_efficiency                   Multiprocessor Activity       4.95%       4.96%       4.96%
+        100                    shared_load_throughput             Shared Memory Load Throughput  1.1526GB/s  1.1774GB/s  1.1632GB/s
+        100                   shared_store_throughput            Shared Memory Store Throughput  780.95MB/s  797.78MB/s  788.17MB/s
+        100                            gld_throughput                    Global Load Throughput  779.97MB/s  796.78MB/s  787.19MB/s
+        100                            gst_throughput                   Global Store Throughput  97.497MB/s  99.598MB/s  98.398MB/s
+    Kernel: void nms_kernel_impl<float>(int, double, float const *, __int64*)
+        100                        achieved_occupancy                        Achieved Occupancy    0.529225    0.580542    0.551210
+        100                             sm_efficiency                   Multiprocessor Activity      70.86%      80.21%      75.22%
+        100                    shared_load_throughput             Shared Memory Load Throughput  840.81GB/s  902.30GB/s  873.40GB/s
+        100                   shared_store_throughput            Shared Memory Store Throughput  25.995GB/s  27.895GB/s  27.002GB/s
+        100                            gld_throughput                    Global Load Throughput  209.43GB/s  224.74GB/s  217.55GB/s
+        100                            gst_throughput                   Global Store Throughput  53.538GB/s  57.453GB/s  55.612GB/s
