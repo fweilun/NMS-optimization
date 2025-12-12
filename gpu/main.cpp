@@ -94,12 +94,9 @@ int main(int argc, char* argv[]) {
     std::string n_str = argv[1];
     int n = stoi(n_str);
     for (int id = 0; id < 100; id++) {
-      if (nms_test(n, 0)) {
-          printf("CORRECT!!\n");
+      if (!nms_test(n, id%10)) {
+            printf("WRONG!!\n");
       }
-      else {
-          printf("WRONG!!\n");
-    }   
     }
     return 0;
 }

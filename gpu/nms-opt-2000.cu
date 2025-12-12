@@ -16,6 +16,25 @@ const std::string BENCHMARK_DIR = "../benchmark/";
 int const threadsPerBlock = sizeof(unsigned long long) * 8; // 64 bits
 __host__ __device__ inline int ceil_div(int a, int b) { return (a + b - 1) / b; }
 
+__device__ __constant__ unsigned long long BITMASK_TABLE[64] = {
+    1ULL << 0,  1ULL << 1,  1ULL << 2,  1ULL << 3,
+    1ULL << 4,  1ULL << 5,  1ULL << 6,  1ULL << 7,
+    1ULL << 8,  1ULL << 9,  1ULL << 10, 1ULL << 11,
+    1ULL << 12, 1ULL << 13, 1ULL << 14, 1ULL << 15,
+    1ULL << 16, 1ULL << 17, 1ULL << 18, 1ULL << 19,
+    1ULL << 20, 1ULL << 21, 1ULL << 22, 1ULL << 23,
+    1ULL << 24, 1ULL << 25, 1ULL << 26, 1ULL << 27,
+    1ULL << 28, 1ULL << 29, 1ULL << 30, 1ULL << 31,
+    1ULL << 32, 1ULL << 33, 1ULL << 34, 1ULL << 35,
+    1ULL << 36, 1ULL << 37, 1ULL << 38, 1ULL << 39,
+    1ULL << 40, 1ULL << 41, 1ULL << 42, 1ULL << 43,
+    1ULL << 44, 1ULL << 45, 1ULL << 46, 1ULL << 47,
+    1ULL << 48, 1ULL << 49, 1ULL << 50, 1ULL << 51,
+    1ULL << 52, 1ULL << 53, 1ULL << 54, 1ULL << 55,
+    1ULL << 56, 1ULL << 57, 1ULL << 58, 1ULL << 59,
+    1ULL << 60, 1ULL << 61, 1ULL << 62, 1ULL << 63
+};
+
 template <typename T>
 __device__ inline bool devIoU(
     T const* const a,
@@ -27,7 +46,9 @@ __device__ inline bool devIoU(
   float interS = (float)width * height;
   float Sa = ((float)a[2] - a[0]) * (a[3] - a[1]);
   float Sb = ((float)b[2] - b[0]) * (b[3] - b[1]);
-  return (interS / (Sa + Sb - interS)) > threshold;
+  float lhs = interS * (1.0f + threshold);
+  float rhs = threshold * (Sa + Sb);
+  return lhs > rhs;
 }
 
 template <typename T>
@@ -63,6 +84,7 @@ __global__ void nms_kernel_impl(
         dev_boxes[(threadsPerBlock * col_start + threadIdx.x) * 4 + 3];
   }
   __syncthreads();
+  // __syncwarp();
 
   if (threadIdx.x < row_size) {
     // Each thread holds a row tile, and compare it with all col tiles
@@ -80,7 +102,7 @@ __global__ void nms_kernel_impl(
     // other boxes in the block
     for (i = start; i < col_size; i++) {
       if (devIoU<T>(cur_box, block_boxes + i * 4, iou_threshold)) {
-        t |= 1ULL << i;
+        t |= BITMASK_TABLE[i];
       }
     }
     const int col_blocks = ceil_div(n_boxes, threadsPerBlock);
@@ -109,34 +131,26 @@ __global__ static void gather_keep_from_mask(
   for (int i = thread_id; i < col_blocks; i += blockDim.x) {
     removed[i] = 0;
   }
-  __syncthreads();
-  // __syncwarp();
-
-  // removed[j] is a 64-bit bitset for column block j.
-  // removed[j]’s bits indicate which boxes in block j are already suppressed.
+  __syncwarp();
   for (int nblock = 0; nblock < col_blocks; nblock++) {
     auto removed_val = removed[nblock];
-    __syncthreads();
-    // __syncwarp();
+    __syncwarp();
     const int i_offset = nblock * threadsPerBlock;
+    if (i_offset >= n_boxes)
+        break;
+
     #pragma unroll
     for (int inblock = 0; inblock < threadsPerBlock; inblock++) {
       const int i = i_offset + inblock; // 'i' points to a candidate box
-      if (i >= n_boxes)
-        break;
-      // Select a candidate, check if it should kept.
-      if (!(removed_val & (1ULL << inblock))) {   // if not removed
+      if (!(removed_val & BITMASK_TABLE[inblock])) {   // if not removed
         if (thread_id == 0) {
           keep[i] = true;
         }
         auto p = dev_mask + i * col_blocks;
-        // Remove all bboxes which overlap the candidate 'i'.
         for (int j = thread_id; j < col_blocks; j += blockDim.x) {
           removed[j] |= p[j];
-          // p[j] = dev_mask[i * col_blocks + j], and points to a 64-bit bitset
         }
-        __syncthreads();
-        //__syncwarp();
+        __syncwarp();
         removed_val = removed[nblock];
       }
     }
@@ -196,7 +210,9 @@ std::vector<int> nms_kernel(const std::vector<Box>& boxes, const std::vector<flo
 
     cudaMemcpy(d_boxes, h_boxes.data(), sizeof(float) * 4 * n, cudaMemcpyHostToDevice);
     cudaMemset(d_mask, 0, sizeof(unsigned long long) * n * col_blocks);
-    cudaMemset(d_keep, 0, sizeof(bool) * n);
+
+    int n_padding = (n + 63) / 64 * 64;
+    cudaMemset(d_keep, 0, sizeof(bool) * n_padding);
 
     // 4) 啟動 kernels（使用預設 stream 0）
     dim3 blocks(col_blocks, col_blocks);

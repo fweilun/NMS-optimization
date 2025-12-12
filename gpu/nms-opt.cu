@@ -27,7 +27,13 @@ __device__ inline bool devIoU(
   float interS = (float)width * height;
   float Sa = ((float)a[2] - a[0]) * (a[3] - a[1]);
   float Sb = ((float)b[2] - b[0]) * (b[3] - b[1]);
-  return (interS / (Sa + Sb - interS)) > threshold;
+
+  // (interS / (Sa + Sb - interS)) > threshold;
+  // interS * (1+threshold) > threshold * Sa + threshold * Sb - threshold * interS;
+  // return (interS / (Sa + Sb - interS)) > threshold;
+  float lhs = interS * (1.0f + threshold);
+  float rhs = threshold * (Sa + Sb);
+  return lhs > rhs;
 }
 
 template <typename T>
